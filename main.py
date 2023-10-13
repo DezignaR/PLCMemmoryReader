@@ -5,12 +5,14 @@ import matplotlib as plt
 df = pd.DataFrame()
 arr_gen = ()
 
-#Выгрузка CSV в DataFrame
+
+# Выгрузка CSV в DataFrame
 def parse_csv_to_df():
     global df
     df = pd.read_csv('NewPLC_Global_Variable.csv', delimiter=',', encoding="ISO-8859-1")
 
-#Преобразование DataFrame
+
+# Преобразование DataFrame
 def get_adr_df():
     ddf = df[df.Address.str.contains('%M', na=False)].Address
 
@@ -34,6 +36,7 @@ def get_adr_df():
 
     return ddf
 
+
 # Перевод адреса в %MX
 def parse_to_mx(tag, adr):
     if tag == '%MD':
@@ -45,30 +48,39 @@ def parse_to_mx(tag, adr):
     elif tag == '%MX':
         return adr, 0
 
-#Создание массива с нулевыми значениями
+
+# Создание массива с нулевыми значениями
 def create_arr():
     global arr_gen
-    arr_gen = np.zeros((262144, 8))
-    print(arr_gen)
+    arr_gen = np.empty((262144, 8))
+    # print(arr_gen)
     return arr_gen
 
+
 # Заполнение массива
-def arr_proces():
+def arr_proces(data_frame):
     global arr_gen
+    for index in range(0, len(data_frame.index)):
+        tag = data_frame['tag'].values[index]
+        adr = data_frame['adr_mx'].values[index]
+        delt = data_frame['adr_delt'].values[index]
 
+        if tag != '%MX':
+            for j in range(adr // 8, adr // 8 + delt // 8):
+                for i in range(0, 8):
+                    arr_gen[j][i] = delt
+        else:
+            arr_gen[adr // 8][adr % 8] = delt+10
 
-
+    print(arr_gen)
 
 
 def main():
-
     parse_csv_to_df()
     data_frame = get_adr_df()
     data_frame = data_frame.sort_values(by=['adr_mx'])
     create_arr()
-
-
-    print(data_frame)
+    arr_proces(data_frame)
 
 
 if __name__ == '__main__':
