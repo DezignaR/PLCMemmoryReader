@@ -57,7 +57,7 @@ def parse_to_mx(tag, adr):
 # Создание массива с нулевыми значениями
 def create_arr():
     global arr_gen
-    arr_gen = np.empty((262144, 8))
+    arr_gen = np.empty((32 * 1024, 8))
     return arr_gen
 
 
@@ -77,6 +77,19 @@ def arr_proces(data_frame):
             arr_gen[adr // 8][adr % 8] = delt + 10
 
 
+def mx_to_hmi(mx_adr=0, hmi_adr=0):
+    if mx_adr != 0:
+        mx_int = mx_adr // 16
+        mx_fl = mx_adr - (mx_int * 16)
+        if mx_fl < 10:
+            mx_fl = "0" + str(mx_fl)
+        return str(mx_int) + str(mx_fl)
+    elif hmi_adr != 0:
+        hmi_int = int(str(hmi_adr)[:-2])
+        hmi_fl = int(str(hmi_adr)[-2:])
+        return str(hmi_int * 16 + hmi_fl)
+
+
 def file_dialog_window():
     def on_close():
         global window_close
@@ -84,28 +97,76 @@ def file_dialog_window():
         dialog_window.destroy()
 
     def procces():
-        dialog_window.destroy()
+        # dialog_window.destroy()
         table_window()
 
     def open_file():
         global path
         path = filedialog.Open(dialog_window).show()
-        entry.insert(1, path)
+        entry.insert(0, path)
         if path != '':
             parse_csv_to_df()
 
+    def set_flag_true(event):
+        nonlocal flag
+        flag = True
+
+    def set_flag_false(event):
+        nonlocal flag
+        flag = False
+
+    def calc_btn(event):
+        if flag:
+            calc_mx()
+        else:
+            calc_hmi()
+
+    def calc_mx():
+        mx_adr = mx_entry.get()
+        hmi_entry.delete(0, END)
+        hmi_entry.insert(0, str(mx_to_hmi(int(mx_adr), 0)))
+
+    def calc_hmi():
+        hmi_adr = hmi_entry.get()
+        mx_entry.delete(0, END)
+        mx_entry.insert(0, str(mx_to_hmi(0, int(hmi_adr))))
+
     dialog_window = Tk()
-    dialog_window.geometry("300x100")
-    dialog_window.title("Выберите файл CSV")
-    entry = Entry(dialog_window)
+    dialog_window.geometry("300x250")
+    dialog_window.title("PLC Memmory Reader")
+    dialog_window.resizable(False, False)
+    entry = Entry(dialog_window, width=40)
 
-    entry.pack(fill=X)
+    flag = True
 
+    mx_entry = Entry(dialog_window)
+    hmi_entry = Entry(dialog_window)
+    btn_calc = Button(dialog_window, text='Расчитать')
+    mx_lb = Label(dialog_window, text='%MX')
+    hmi_lb = Label(dialog_window, text='HMI')
+
+    mx_entry.bind("<Return>", calc_btn)
+    mx_entry.bind("<Button-1>", set_flag_true)
+    hmi_entry.bind("<Return>", calc_btn)
+    hmi_entry.bind("<Button-1>", set_flag_false)
+
+    title_label_calc = Label(dialog_window,text="Калькулятор адреса памяти").grid(row=1, column=1, columnspan=2)
+    mx_lb.grid(row=2, column=1)
+    hmi_lb.grid(row=2, column=2)
+    mx_entry.grid(row=3, column=1)
+    hmi_entry.grid(row=3, column=2)
+    btn_calc.grid(row=4, column=2, sticky='e')
+    btn_calc.bind("<Button-1>",calc_btn)
+
+    zero_lab1 = Label(dialog_window).grid(row=5, column=1, columnspan=2)
+    title_label_table= Label(dialog_window, text="Выгрузить таблицу адресов из CSV").grid(row=6, column=1, columnspan=2)
+    entry.grid(row=7, column=1, columnspan=2)
     button = Button(dialog_window, text='Выбрать файл', command=open_file)
 
-    button.pack(anchor='e')
+    button.grid(row=8, column=2, sticky='e')
+    zero_lab = Label(dialog_window).grid(row=9, column=1, columnspan=2)
     button_apply = Button(dialog_window, text='Выполнить', command=procces)
-    button_apply.pack(side=BOTTOM)
+    button_apply.grid(row=10, column=2, sticky='e')
     dialog_window.protocol("WM_DELETE_WINDOW", on_close)
     dialog_window.mainloop()
 
@@ -116,7 +177,7 @@ def table_window():
     create_arr()
     arr_proces(data_frame)
 
-    def open_dialog():
+    def on_close():
         table_window.destroy()
 
     def add_to_table():
@@ -147,18 +208,27 @@ def table_window():
                              values=(str(index + 1), el0[7], el0[6], el0[5], el0[4], el0[3], el0[2], el0[1], el0[0]),
                              tags=('0',))
             elif flag == 8:
+                for i in range(0, len(el0)):
+                    if el0[i] != '0': el0[i] = 'MB'
+
                 table.insert(parent='', index='end', iid=count, text='',
                              values=(str(index + 1), el0[7], el0[6], el0[5], el0[4], el0[3], el0[2], el0[1], el0[0]),
                              tags=('8',))
             elif flag == 16:
+                for i in range(0, len(el0)):
+                    if el0[i] != '0': el0[i] = 'MW'
                 table.insert(parent='', index='end', iid=count, text='',
                              values=(str(index + 1), el0[7], el0[6], el0[5], el0[4], el0[3], el0[2], el0[1], el0[0]),
                              tags=('16',))
             elif flag == 32:
+                for i in range(0, len(el0)):
+                    if el0[i] != '0': el0[i] = 'MD'
                 table.insert(parent='', index='end', iid=count, text='',
                              values=(str(index + 1), el0[7], el0[6], el0[5], el0[4], el0[3], el0[2], el0[1], el0[0]),
                              tags=('32',))
             elif flag == 10:
+                for i in range(0, len(el0)):
+                    if el0[i] != '0': el0[i] = 'MX'
                 table.insert(parent='', index='end', iid=count, text='',
                              values=(str(index + 1), el0[7], el0[6], el0[5], el0[4], el0[3], el0[2], el0[1], el0[0]),
                              tags=('10',))
@@ -172,12 +242,12 @@ def table_window():
     table = ttk.Treeview(table_window)
     table['height'] = 500
     table['columns'] = ('indx', '7', '6', '5', '4', '3', '2', '1', '0')
-    scrollbar = ttk.Scrollbar(orient='vertical', command=table.yview)
+    scrollbar = ttk.Scrollbar(table_window, orient='vertical', command=table.yview)
 
     style = ttk.Style()
     style.configure(table, background='silver')
 
-    table.column("#0", width=0)
+    table.column("#0", width=1, stretch=NO)
     table.column('indx', width=80, anchor=CENTER)
     table.column('7', width=50, anchor=CENTER)
     table.column('6', width=50, anchor=CENTER)
@@ -189,7 +259,7 @@ def table_window():
     table.column('0', width=50, anchor=CENTER)
 
     table.heading("#0", text="", anchor=CENTER)
-    table.heading("indx", text="", anchor=CENTER)
+    table.heading("indx", text="#Byte", anchor=CENTER)
     table.heading("7", text="7", anchor=CENTER)
     table.heading("6", text="6", anchor=CENTER)
     table.heading("5", text="5", anchor=CENTER)
@@ -200,12 +270,21 @@ def table_window():
     table.heading("0", text="0", anchor=CENTER)
 
     add_to_table()
-    table.pack(side=LEFT, fill=X)
+    table.pack(side=LEFT, fill=BOTH)
     scrollbar.pack(side=RIGHT, fill=Y)
     table["yscrollcommand"] = scrollbar.set
-    button = Button(table_window, text='Выбрать файл', command=open_dialog)
-    button.pack(side=BOTTOM)
+    # button = Button(table_window, text='Выбрать файл', command=open_dialog)
+    # button.pack(side=BOTTOM)
+
+    table_window.protocol("WM_DELETE_WINDOW", on_close)
+
     table_window.mainloop()
+
+
+def calc_mem_window():
+    calc_window = Tk()
+
+    calc_window.mainloop()
 
 
 def main():
