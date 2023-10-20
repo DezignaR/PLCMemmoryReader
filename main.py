@@ -150,16 +150,17 @@ def file_dialog_window():
     hmi_entry.bind("<Return>", calc_btn)
     hmi_entry.bind("<Button-1>", set_flag_false)
 
-    title_label_calc = Label(dialog_window,text="Калькулятор адреса памяти").grid(row=1, column=1, columnspan=2)
+    title_label_calc = Label(dialog_window, text="Калькулятор адреса памяти").grid(row=1, column=1, columnspan=2)
     mx_lb.grid(row=2, column=1)
     hmi_lb.grid(row=2, column=2)
     mx_entry.grid(row=3, column=1)
     hmi_entry.grid(row=3, column=2)
     btn_calc.grid(row=4, column=2, sticky='e')
-    btn_calc.bind("<Button-1>",calc_btn)
+    btn_calc.bind("<Button-1>", calc_btn)
 
     zero_lab1 = Label(dialog_window).grid(row=5, column=1, columnspan=2)
-    title_label_table= Label(dialog_window, text="Выгрузить таблицу адресов из CSV").grid(row=6, column=1, columnspan=2)
+    title_label_table = Label(dialog_window, text="Выгрузить таблицу адресов из CSV").grid(row=6, column=1,
+                                                                                           columnspan=2)
     entry.grid(row=7, column=1, columnspan=2)
     button = Button(dialog_window, text='Выбрать файл', command=open_file)
 
@@ -273,18 +274,8 @@ def table_window():
     table.pack(side=LEFT, fill=BOTH)
     scrollbar.pack(side=RIGHT, fill=Y)
     table["yscrollcommand"] = scrollbar.set
-    # button = Button(table_window, text='Выбрать файл', command=open_dialog)
-    # button.pack(side=BOTTOM)
-
     table_window.protocol("WM_DELETE_WINDOW", on_close)
-
     table_window.mainloop()
-
-
-def calc_mem_window():
-    calc_window = Tk()
-
-    calc_window.mainloop()
 
 
 def main():
